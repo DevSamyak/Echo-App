@@ -53,7 +53,7 @@ class AuthRemoteRepository {
         return Left(AppFailure(resBodyMap['detail']));
       } else {
         final token = resBodyMap['token'] as String?;
-        print('x-auth-token (from login): $token');
+        //print('x-auth-token (from login): $token');
         return Right(
           UserModel.
           fromMap(resBodyMap['user']).
