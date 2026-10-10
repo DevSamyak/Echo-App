@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:client/core/constants/server_constants.dart';
@@ -17,27 +18,31 @@ SaavnRepository saavnRepository(SaavnRepositoryRef ref) {
 /// Talks to our own FastAPI server (/saavn/...), which proxies the JioSaavn
 /// API and returns songs already shaped like SongModel.
 class SaavnRepository {
-  /// [section] is one of the keys defined in the server's SECTIONS map:
-  /// trending, new, punjabi, romantic, retro, arijit, party, tamil, telugu.
+  /// Added [page] parameter to support fetching fresh data and pagination
   Future<Either<AppFailure, List<SongModel>>> getFeed({
     required String token,
     required String section,
     int limit = 20,
+    int page = 1,
   }) {
     return _get(token, '/saavn/feed', {
       'section': section,
       'limit': '$limit',
+      'page': '$page',
     });
   }
 
+  /// Added [page] parameter to support fetching deeper search results
   Future<Either<AppFailure, List<SongModel>>> search({
     required String token,
     required String query,
     int limit = 20,
+    int page = 1,
   }) {
     return _get(token, '/saavn/search', {
       'q': query,
       'limit': '$limit',
+      'page': '$page',
     });
   }
 
@@ -50,11 +55,15 @@ class SaavnRepository {
       final uri = Uri.parse('${ServerConstants.serverUrl}$path')
           .replace(queryParameters: params);
 
-      // Long timeout: Echo's server AND the Saavn service on Render may both
-      // be asleep, and the first request has to wake them one after the other.
       final res = await http
           .get(uri, headers: {'x-auth-token': token})
-          .timeout(const Duration(seconds: 90));
+          .timeout(
+        const Duration(seconds: 90),
+        onTimeout: () {
+          // Explicitly throw a clean timeout exception instead of a raw socket error
+          throw TimeoutException("Server is waking up from sleep. Please try again.");
+        },
+      );
 
       if (res.statusCode != 200) {
         return Left(AppFailure(_errorMessage(res)));
@@ -65,8 +74,12 @@ class SaavnRepository {
           .map((m) => SongModel.fromMap(m as Map<String, dynamic>))
           .toList();
       return Right(songs);
+      
+    } on TimeoutException catch (e) {
+      return Left(AppFailure(e.message ?? "Connection timed out."));
     } catch (e) {
-      return Left(AppFailure(e.toString()));
+      // Catching other errors (like "Device connection failed") cleanly
+      return Left(AppFailure("Network error: ${e.toString()}"));
     }
   }
 

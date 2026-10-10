@@ -6,7 +6,7 @@ part of 'saavn_viewmodel.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$saavnFeedHash() => r'c01e63bd08749f240ae956021b9598e6a9004fa5';
+String _$saavnFeedHash() => r'f689d2b467039f98ed467a8c99207d8f47ae07ae';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -31,9 +31,7 @@ class _SystemHash {
 
 /// One provider for every Saavn row on the Discover page.
 ///
-///   ref.watch(saavnFeedProvider('trending'))  -> Top Hindi / Bollywood
-///   ref.watch(saavnFeedProvider('punjabi'))   -> Punjabi hits
-///   ref.watch(saavnFeedProvider('retro'))     -> Old classics
+///   ref.watch(saavnFeedProvider('trending', page: 1))  -> Top Hindi / Bollywood
 ///
 /// [section] must be a key from the server's SECTIONS map.
 ///
@@ -43,9 +41,7 @@ const saavnFeedProvider = SaavnFeedFamily();
 
 /// One provider for every Saavn row on the Discover page.
 ///
-///   ref.watch(saavnFeedProvider('trending'))  -> Top Hindi / Bollywood
-///   ref.watch(saavnFeedProvider('punjabi'))   -> Punjabi hits
-///   ref.watch(saavnFeedProvider('retro'))     -> Old classics
+///   ref.watch(saavnFeedProvider('trending', page: 1))  -> Top Hindi / Bollywood
 ///
 /// [section] must be a key from the server's SECTIONS map.
 ///
@@ -53,9 +49,7 @@ const saavnFeedProvider = SaavnFeedFamily();
 class SaavnFeedFamily extends Family<AsyncValue<List<SongModel>>> {
   /// One provider for every Saavn row on the Discover page.
   ///
-  ///   ref.watch(saavnFeedProvider('trending'))  -> Top Hindi / Bollywood
-  ///   ref.watch(saavnFeedProvider('punjabi'))   -> Punjabi hits
-  ///   ref.watch(saavnFeedProvider('retro'))     -> Old classics
+  ///   ref.watch(saavnFeedProvider('trending', page: 1))  -> Top Hindi / Bollywood
   ///
   /// [section] must be a key from the server's SECTIONS map.
   ///
@@ -64,18 +58,18 @@ class SaavnFeedFamily extends Family<AsyncValue<List<SongModel>>> {
 
   /// One provider for every Saavn row on the Discover page.
   ///
-  ///   ref.watch(saavnFeedProvider('trending'))  -> Top Hindi / Bollywood
-  ///   ref.watch(saavnFeedProvider('punjabi'))   -> Punjabi hits
-  ///   ref.watch(saavnFeedProvider('retro'))     -> Old classics
+  ///   ref.watch(saavnFeedProvider('trending', page: 1))  -> Top Hindi / Bollywood
   ///
   /// [section] must be a key from the server's SECTIONS map.
   ///
   /// Copied from [saavnFeed].
   SaavnFeedProvider call(
-    String section,
-  ) {
+    String section, {
+    int page = 1,
+  }) {
     return SaavnFeedProvider(
       section,
+      page: page,
     );
   }
 
@@ -85,6 +79,7 @@ class SaavnFeedFamily extends Family<AsyncValue<List<SongModel>>> {
   ) {
     return call(
       provider.section,
+      page: provider.page,
     );
   }
 
@@ -105,9 +100,7 @@ class SaavnFeedFamily extends Family<AsyncValue<List<SongModel>>> {
 
 /// One provider for every Saavn row on the Discover page.
 ///
-///   ref.watch(saavnFeedProvider('trending'))  -> Top Hindi / Bollywood
-///   ref.watch(saavnFeedProvider('punjabi'))   -> Punjabi hits
-///   ref.watch(saavnFeedProvider('retro'))     -> Old classics
+///   ref.watch(saavnFeedProvider('trending', page: 1))  -> Top Hindi / Bollywood
 ///
 /// [section] must be a key from the server's SECTIONS map.
 ///
@@ -115,19 +108,19 @@ class SaavnFeedFamily extends Family<AsyncValue<List<SongModel>>> {
 class SaavnFeedProvider extends AutoDisposeFutureProvider<List<SongModel>> {
   /// One provider for every Saavn row on the Discover page.
   ///
-  ///   ref.watch(saavnFeedProvider('trending'))  -> Top Hindi / Bollywood
-  ///   ref.watch(saavnFeedProvider('punjabi'))   -> Punjabi hits
-  ///   ref.watch(saavnFeedProvider('retro'))     -> Old classics
+  ///   ref.watch(saavnFeedProvider('trending', page: 1))  -> Top Hindi / Bollywood
   ///
   /// [section] must be a key from the server's SECTIONS map.
   ///
   /// Copied from [saavnFeed].
   SaavnFeedProvider(
-    String section,
-  ) : this._internal(
+    String section, {
+    int page = 1,
+  }) : this._internal(
           (ref) => saavnFeed(
             ref as SaavnFeedRef,
             section,
+            page: page,
           ),
           from: saavnFeedProvider,
           name: r'saavnFeedProvider',
@@ -138,6 +131,7 @@ class SaavnFeedProvider extends AutoDisposeFutureProvider<List<SongModel>> {
           dependencies: SaavnFeedFamily._dependencies,
           allTransitiveDependencies: SaavnFeedFamily._allTransitiveDependencies,
           section: section,
+          page: page,
         );
 
   SaavnFeedProvider._internal(
@@ -148,9 +142,11 @@ class SaavnFeedProvider extends AutoDisposeFutureProvider<List<SongModel>> {
     required super.debugGetCreateSourceHash,
     required super.from,
     required this.section,
+    required this.page,
   }) : super.internal();
 
   final String section;
+  final int page;
 
   @override
   Override overrideWith(
@@ -166,6 +162,7 @@ class SaavnFeedProvider extends AutoDisposeFutureProvider<List<SongModel>> {
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
         section: section,
+        page: page,
       ),
     );
   }
@@ -177,13 +174,16 @@ class SaavnFeedProvider extends AutoDisposeFutureProvider<List<SongModel>> {
 
   @override
   bool operator ==(Object other) {
-    return other is SaavnFeedProvider && other.section == section;
+    return other is SaavnFeedProvider &&
+        other.section == section &&
+        other.page == page;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
     hash = _SystemHash.combine(hash, section.hashCode);
+    hash = _SystemHash.combine(hash, page.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -192,6 +192,9 @@ class SaavnFeedProvider extends AutoDisposeFutureProvider<List<SongModel>> {
 mixin SaavnFeedRef on AutoDisposeFutureProviderRef<List<SongModel>> {
   /// The parameter `section` of this provider.
   String get section;
+
+  /// The parameter `page` of this provider.
+  int get page;
 }
 
 class _SaavnFeedProviderElement
@@ -201,9 +204,11 @@ class _SaavnFeedProviderElement
 
   @override
   String get section => (origin as SaavnFeedProvider).section;
+  @override
+  int get page => (origin as SaavnFeedProvider).page;
 }
 
-String _$saavnSearchHash() => r'ff1abc65834ecc5d6d44fb40f14b24b55c3b4c1e';
+String _$saavnSearchHash() => r'80ba402f9998903a44a33830f36907279d7be141';
 
 /// Used by the Search tab. Auto-disposes so old searches don't pile up.
 ///
@@ -224,10 +229,12 @@ class SaavnSearchFamily extends Family<AsyncValue<List<SongModel>>> {
   ///
   /// Copied from [saavnSearch].
   SaavnSearchProvider call(
-    String query,
-  ) {
+    String query, {
+    int page = 1,
+  }) {
     return SaavnSearchProvider(
       query,
+      page: page,
     );
   }
 
@@ -237,6 +244,7 @@ class SaavnSearchFamily extends Family<AsyncValue<List<SongModel>>> {
   ) {
     return call(
       provider.query,
+      page: provider.page,
     );
   }
 
@@ -263,11 +271,13 @@ class SaavnSearchProvider extends AutoDisposeFutureProvider<List<SongModel>> {
   ///
   /// Copied from [saavnSearch].
   SaavnSearchProvider(
-    String query,
-  ) : this._internal(
+    String query, {
+    int page = 1,
+  }) : this._internal(
           (ref) => saavnSearch(
             ref as SaavnSearchRef,
             query,
+            page: page,
           ),
           from: saavnSearchProvider,
           name: r'saavnSearchProvider',
@@ -279,6 +289,7 @@ class SaavnSearchProvider extends AutoDisposeFutureProvider<List<SongModel>> {
           allTransitiveDependencies:
               SaavnSearchFamily._allTransitiveDependencies,
           query: query,
+          page: page,
         );
 
   SaavnSearchProvider._internal(
@@ -289,9 +300,11 @@ class SaavnSearchProvider extends AutoDisposeFutureProvider<List<SongModel>> {
     required super.debugGetCreateSourceHash,
     required super.from,
     required this.query,
+    required this.page,
   }) : super.internal();
 
   final String query;
+  final int page;
 
   @override
   Override overrideWith(
@@ -307,6 +320,7 @@ class SaavnSearchProvider extends AutoDisposeFutureProvider<List<SongModel>> {
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
         query: query,
+        page: page,
       ),
     );
   }
@@ -318,13 +332,16 @@ class SaavnSearchProvider extends AutoDisposeFutureProvider<List<SongModel>> {
 
   @override
   bool operator ==(Object other) {
-    return other is SaavnSearchProvider && other.query == query;
+    return other is SaavnSearchProvider &&
+        other.query == query &&
+        other.page == page;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
     hash = _SystemHash.combine(hash, query.hashCode);
+    hash = _SystemHash.combine(hash, page.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -333,6 +350,9 @@ class SaavnSearchProvider extends AutoDisposeFutureProvider<List<SongModel>> {
 mixin SaavnSearchRef on AutoDisposeFutureProviderRef<List<SongModel>> {
   /// The parameter `query` of this provider.
   String get query;
+
+  /// The parameter `page` of this provider.
+  int get page;
 }
 
 class _SaavnSearchProviderElement
@@ -342,6 +362,8 @@ class _SaavnSearchProviderElement
 
   @override
   String get query => (origin as SaavnSearchProvider).query;
+  @override
+  int get page => (origin as SaavnSearchProvider).page;
 }
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

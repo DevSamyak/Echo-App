@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:client/core/providers/current_song_notifier.dart';
 import 'package:client/core/theme/app_pallete.dart';
+import 'package:client/core/utils.dart';
 import 'package:client/features/home/model/song_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -288,10 +289,7 @@ class SongSection extends StatelessWidget {
           ),
           error: (e, _) {
             debugPrint('SongSection "$title" error: $e');
-            return _message(
-              "Couldn't load songs. Check your connection and try again.",
-              retry: true,
-            );
+            return _message(friendlyError(e), retry: true);
           },
           data: (list) {
             if (list.isEmpty) return _message(emptyText);

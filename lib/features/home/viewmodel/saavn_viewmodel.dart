@@ -12,13 +12,11 @@ part 'saavn_viewmodel.g.dart';
 
 /// One provider for every Saavn row on the Discover page.
 ///
-///   ref.watch(saavnFeedProvider('trending'))  -> Top Hindi / Bollywood
-///   ref.watch(saavnFeedProvider('punjabi'))   -> Punjabi hits
-///   ref.watch(saavnFeedProvider('retro'))     -> Old classics
+///   ref.watch(saavnFeedProvider('trending', page: 1))  -> Top Hindi / Bollywood
 ///
 /// [section] must be a key from the server's SECTIONS map.
 @riverpod
-Future<List<SongModel>> saavnFeed(SaavnFeedRef ref, String section) async {
+Future<List<SongModel>> saavnFeed(SaavnFeedRef ref, String section, {int page = 1}) async {
   final token = ref.watch(currentUserNotifierProvider.select((u) => u?.token));
   if (token == null) throw 'You are not logged in';
 
@@ -27,12 +25,16 @@ Future<List<SongModel>> saavnFeed(SaavnFeedRef ref, String section) async {
   ref.onDispose(timer.cancel);
 
   final prefs = await SharedPreferences.getInstance();
-  final key = 'feed:$section';
+  
+  // FIXED: Include the page number in the cache key so different pages don't overwrite each other
+  final key = 'feed:$section:$page';
 
   Future<List<SongModel>> fetchFresh() async {
     final res = await ref
         .read(saavnRepositoryProvider)
-        .getFeed(token: token, section: section);
+        // FIXED: Pass the page parameter down to the repository
+        .getFeed(token: token, section: section, page: page);
+        
     switch (res) {
       case Left(value: final l):
         throw l.message;
@@ -70,7 +72,8 @@ Future<List<SongModel>> saavnFeed(SaavnFeedRef ref, String section) async {
 
 /// Used by the Search tab. Auto-disposes so old searches don't pile up.
 @riverpod
-Future<List<SongModel>> saavnSearch(SaavnSearchRef ref, String query) async {
+// FIXED: Added {int page = 1} to the search provider as well
+Future<List<SongModel>> saavnSearch(SaavnSearchRef ref, String query, {int page = 1}) async {
   final q = query.trim();
   if (q.isEmpty) return [];
 
@@ -78,7 +81,8 @@ Future<List<SongModel>> saavnSearch(SaavnSearchRef ref, String query) async {
   if (token == null) throw 'You are not logged in';
 
   final res =
-      await ref.watch(saavnRepositoryProvider).search(token: token, query: q);
+      // FIXED: Pass the page down to the search repository function
+      await ref.read(saavnRepositoryProvider).search(token: token, query: q, page: page);
 
   switch (res) {
     case Left(value: final l):

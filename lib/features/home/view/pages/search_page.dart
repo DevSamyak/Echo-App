@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:client/core/providers/current_song_notifier.dart';
 import 'package:client/core/theme/app_pallete.dart';
+import 'package:client/core/utils.dart';
 import 'package:client/core/widgets/loader.dart';
 import 'package:client/features/home/viewmodel/saavn_viewmodel.dart';
 import 'package:client/features/home/widgets/song_widgets.dart';
@@ -116,10 +117,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    "Couldn't search right now. Check your connection.",
+                  Text(
+                    friendlyError(e),
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Pallete.subtitleText),
+                    style: const TextStyle(color: Pallete.subtitleText),
                   ),
                   TextButton(
                     onPressed: () => ref.invalidate(provider),

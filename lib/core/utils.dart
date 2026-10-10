@@ -45,3 +45,22 @@ Future<File?> pickImage() async {
     return null;
   }
 }
+
+/// Turns an error into text for the UI. Real connection problems get a hint to
+/// check the network; server messages (for example "Music service is busy...")
+/// are shown as they are instead of blaming the user's internet.
+String friendlyError(Object e) {
+  final msg = e.toString().replaceFirst('Exception: ', '').trim();
+  final lower = msg.toLowerCase();
+  final isNetwork = lower.contains('socketexception') ||
+      lower.contains('clientexception') ||
+      lower.contains('failed host lookup') ||
+      lower.contains('network error') ||
+      lower.contains('timed out') ||
+      lower.contains('waking up');
+  if (isNetwork) {
+    return "Couldn't reach the server. Check your connection and try again.";
+  }
+  if (msg.isEmpty) return 'Something went wrong. Please try again.';
+  return msg;
+}

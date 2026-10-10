@@ -8,13 +8,8 @@ import 'package:client/features/home/widgets/song_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// (section key sent to the server, row title). The keys must exist in the
-/// server's SECTIONS map (server/routes/saavn.py).
 typedef _Row = (String, String);
 
-/// (chip label, rows shown under that chip).
-/// Each row is one request to the server, so keep chips to 1-2 rows to stay
-/// gentle on the free Render instances.
 const _categories = <(String, List<_Row>)>[
   ('Hindi', [('trending', 'Trending in Hindi'), ('new', 'New releases')]),
   ('Romantic', [('romantic', 'Romantic hits')]),
@@ -26,7 +21,6 @@ const _categories = <(String, List<_Row>)>[
   ('Arijit Singh', [('arijit', 'Arijit Singh')]),
 ];
 
-/// Home tab: songs from JioSaavn (through our own server).
 class DiscoverPage extends ConsumerStatefulWidget {
   const DiscoverPage({super.key});
 
@@ -36,6 +30,9 @@ class DiscoverPage extends ConsumerStatefulWidget {
 
 class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   int _selected = 0;
+  
+  // Track the current page for each section to fetch fresh data on refresh
+  final Map<String, int> _sectionPages = {};
 
   List<_Row> get _rows => _categories[_selected].$2;
 
@@ -45,25 +42,26 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   Future<void> _refresh() async {
     for (final row in _rows) {
-      ref.invalidate(saavnFeedProvider(row.$1));
+      // Increment the page, loop back to 1 after 5 pages so you don't run out of JioSaavn data
+      final currentPage = _sectionPages[row.$1] ?? 1;
+      _sectionPages[row.$1] = currentPage >= 5 ? 1 : currentPage + 1;
+      
+      ref.invalidate(saavnFeedProvider(row.$1, page: _sectionPages[row.$1]!));
     }
     try {
-      await ref.read(saavnFeedProvider(_rows.first.$1).future);
-    } catch (_) {
-      // the section itself shows the error + retry button
-    }
+      await ref.read(saavnFeedProvider(_rows.first.$1, page: _sectionPages[_rows.first.$1] ?? 1).future);
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    // Select only what we need so play/pause taps don't rebuild the page.
     final hex = ref.watch(currentSongNotifierProvider.select((s) => s?.hex_code));
-    ref.watch(currentSongNotifierProvider.select((s) => s?.id)); // refresh "recent"
+    ref.watch(currentSongNotifierProvider.select((s) => s?.id));
 
     final recent = ref
         .read(homeViewmodelProvider.notifier)
         .getRecentlyPlayedSong()
-        .where((s) => s.isSaavn) // drops old Jamendo songs and uploads
+        .where((s) => s.isSaavn)
         .take(10)
         .toList();
 
@@ -87,7 +85,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
           onRefresh: _refresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 110), // room for the mini player
+            padding: const EdgeInsets.only(bottom: 110),
             children: [
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -140,13 +138,19 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   onSongTap: _play,
                 ),
               for (final row in _rows)
-                SongSection(
-                  key: ValueKey(row.$1),
-                  title: row.$2,
-                  songs: ref.watch(saavnFeedProvider(row.$1)),
-                  onSongTap: _play,
-                  onRetry: () => ref.invalidate(saavnFeedProvider(row.$1)),
-                  emptyText: 'No songs found right now',
+                Builder(
+                  builder: (context) {
+                    final currentPage = _sectionPages[row.$1] ?? 1;
+                    return SongSection(
+                      // ValueKey tied to currentPage ensures UI rebuilds when page changes
+                      key: ValueKey('${row.$1}_$currentPage'),
+                      title: row.$2,
+                      songs: ref.watch(saavnFeedProvider(row.$1, page: currentPage)),
+                      onSongTap: _play,
+                      onRetry: () => ref.invalidate(saavnFeedProvider(row.$1, page: currentPage)),
+                      emptyText: 'No songs found right now',
+                    );
+                  }
                 ),
             ],
           ),
