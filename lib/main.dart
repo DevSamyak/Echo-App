@@ -1,9 +1,10 @@
 import 'package:client/core/providers/current_user_notifier.dart';
 import 'package:client/core/theme/theme.dart';
-import 'package:client/features/auth/view/pages/signup_page.dart';
+import 'package:client/features/auth/view/pages/auth_page.dart';
 import 'package:client/features/auth/viewmodel/auth_viewmodel.dart';
 import 'package:client/features/home/view/pages/home_page.dart';
-import 'package:client/features/home/view/pages/upload_song_page.dart';
+import 'package:client/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -12,6 +13,9 @@ import 'package:path_provider/path_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
     androidNotificationChannelName: 'Audio playback',
@@ -45,7 +49,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
 
       title: 'Music App',
-      home: currentUser==null?const SignupPage():const HomePage(),
+      home: currentUser==null?const AuthPage():const HomePage(),
       theme: AppTheme.darkThemeMode,
       debugShowCheckedModeBanner: false,
     );

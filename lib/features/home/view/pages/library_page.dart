@@ -3,13 +3,15 @@ import 'package:client/core/providers/current_user_notifier.dart';
 import 'package:client/core/theme/app_pallete.dart';
 import 'package:client/core/widgets/loader.dart';
 import 'package:client/features/auth/repositories/auth_local_repository.dart';
-import 'package:client/features/auth/view/pages/signup_page.dart';
+import 'package:client/features/auth/view/pages/auth_page.dart';
 import 'package:client/features/home/repositories/home_local_repository.dart';
 import 'package:client/features/home/model/song_model.dart';
 import 'package:client/features/home/viewmodel/home_viewmodel.dart';
 import 'package:client/features/home/widgets/song_widgets.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LibraryPage extends ConsumerWidget {
   const LibraryPage({super.key});
@@ -31,6 +33,9 @@ class LibraryPage extends ConsumerWidget {
         actions: [
           IconButton(
             onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              await GoogleSignIn().signOut();
+
               // 1. Delete token from storage
               await ref.read(authLocalRepositoryProvider).removeToken();
               await ref.read(authLocalRepositoryProvider).removeUser();
@@ -48,7 +53,7 @@ class LibraryPage extends ConsumerWidget {
               if (!context.mounted) return;
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const SignupPage()),
+                MaterialPageRoute(builder: (context) => const AuthPage()),
                 (route) => false,
               );
             },

@@ -11,12 +11,15 @@ class UserModel {
   final String id;
   final String token;
   final List<FavSongModel> favourites;
+  final String phone;
+
   UserModel({
     required this.name,
     required this.email,
     required this.id,
     required this.token,
     required this.favourites,
+    this.phone = '',
   });
 
   UserModel copyWith({
@@ -25,6 +28,7 @@ class UserModel {
     String? id,
     String? token,
     List<FavSongModel>? favourites,
+    String? phone,
   }) {
     return UserModel(
       name: name ?? this.name,
@@ -32,6 +36,7 @@ class UserModel {
       id: id ?? this.id,
       token: token ?? this.token,
       favourites: favourites ?? this.favourites,
+      phone: phone ?? this.phone,
     );
   }
 
@@ -42,16 +47,22 @@ class UserModel {
       'id': id,
       'token': token,
       'favourites': favourites.map((x) => x.toMap()).toList(),
+      'phone': phone,
     };
   }
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      name: map['name'] ?? ''  ,
-      email: map['email'] ?? ''  ,
-      id: map['id']  ?? '' ,
-      token: map['token']  ?? ''  ,
-      favourites: List<FavSongModel>.from((map['favourites'] ??[]).map((x) => FavSongModel.fromMap(x as Map<String,dynamic>),),),
+      name: map['name'] ?? '',
+      email: map['email'] ?? '',
+      id: map['id'] ?? '',
+      token: map['token'] ?? '',
+      favourites: List<FavSongModel>.from(
+        (map['favourites'] ?? []).map(
+          (x) => FavSongModel.fromMap(x as Map<String, dynamic>),
+        ),
+      ),
+      phone: map['phone'] ?? '',
     );
   }
 
@@ -61,7 +72,7 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(name: $name, email: $email, id: $id, token: $token, favourites: $favourites)';
+    return 'UserModel(name: $name, email: $email, id: $id, token: $token, favourites: $favourites, phone: $phone)';
   }
 
   @override
@@ -73,7 +84,8 @@ class UserModel {
       other.email == email &&
       other.id == id &&
       other.token == token &&
-      listEquals(other.favourites, favourites);
+      listEquals(other.favourites, favourites) &&
+      other.phone == phone;
   }
 
   @override
@@ -82,6 +94,7 @@ class UserModel {
       email.hashCode ^
       id.hashCode ^
       token.hashCode ^
-      favourites.hashCode;
+      favourites.hashCode ^
+      phone.hashCode;
   }
 }

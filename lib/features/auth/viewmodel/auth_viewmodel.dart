@@ -2,6 +2,7 @@ import 'package:client/core/providers/current_user_notifier.dart';
 import 'package:client/core/models/user_model.dart';
 import 'package:client/features/auth/repositories/auth_local_repository.dart';
 import 'package:client/features/auth/repositories/auth_remote_repository.dart';
+import 'package:client/features/auth/repositories/firebase_auth_repository.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -12,12 +13,15 @@ class AuthViewmodel extends _$AuthViewmodel {
   late AuthRemoteRepository _authRemoteRepository;
   late AuthLocalRepository _authLocalRepository;
   late CurrentUserNotifier _currentUserNotifier;
+  late FirebaseAuthRepository _firebaseAuthRepository;
+  String? _verificationId;
 
   @override
   AsyncValue<UserModel>? build() {
     _authRemoteRepository = ref.watch(authRemoteRepositoryProvider);
     _authLocalRepository = ref.watch(authLocalRepositoryProvider);
-    _currentUserNotifier = ref.watch(currentUserNotifierProvider.notifier); 
+    _currentUserNotifier = ref.watch(currentUserNotifierProvider.notifier);
+    _firebaseAuthRepository = ref.watch(firebaseAuthRepositoryProvider);
     return null;
   }
 
@@ -25,46 +29,79 @@ class AuthViewmodel extends _$AuthViewmodel {
     await _authLocalRepository.init();
   }
 
-  Future<void> signUpUser({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signInWithGoogle() async {
     state = const AsyncValue.loading();
+    final tokenRes = await _firebaseAuthRepository.signInWithGoogle();
 
-    final res = await _authRemoteRepository.signup(
-      name: name,
-      email: email,
-      password: password,
-    );
-
-    final val = switch (res) {
-      Left(value: final l) =>
-        state = AsyncValue.error(l.message, StackTrace.current),
-      Right(value: final r) => state = AsyncValue.data(r),
-    };
-    //print(val);
+    switch (tokenRes) {
+      case Left(value: final l):
+        state = AsyncValue.error(l.message, StackTrace.current);
+      case Right(value: final token):
+        final res = await _authRemoteRepository.authenticateWithFirebase(
+          firebaseToken: token,
+        );
+        switch (res) {
+          case Left(value: final l):
+            state = AsyncValue.error(l.message, StackTrace.current);
+          case Right(value: final user):
+            state = _loginSuccess(user);
+        }
+    }
   }
 
-  Future<void> loginUser({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> sendOtp(String phoneNumber) async {
     state = const AsyncValue.loading();
-
-    final res = await _authRemoteRepository.login(
-      email: email,
-      password: password,
+    final res = await _firebaseAuthRepository.sendOtp(
+      phoneNumber: phoneNumber,
+      onCodeSent: (verificationId) {
+        _verificationId = verificationId;
+      },
+      onError: (failure) {
+        state = AsyncValue.error(failure.message, StackTrace.current);
+      },
     );
 
-    final val = switch(res){
-      Left(value:final l)=> state = AsyncValue.error(
-        l.message,
-        StackTrace.current
-      ),
-      Right(value:final r)=> state = _loginSuccess(r)
+    return switch (res) {
+      Left(value: final l) => () {
+          state = AsyncValue.error(l.message, StackTrace.current);
+          return false;
+        }(),
+      Right(value: final verificationId) => () {
+          _verificationId = verificationId;
+          state = null;
+          return true;
+        }(),
     };
-    print(val);
+  }
+
+  Future<void> verifyOtp(String smsCode) async {
+    if (_verificationId == null) {
+      state = AsyncValue.error(
+        'Verification ID not found. Please resend OTP.',
+        StackTrace.current,
+      );
+      return;
+    }
+    state = const AsyncValue.loading();
+    final tokenRes = await _firebaseAuthRepository.verifyOtp(
+      verificationId: _verificationId!,
+      smsCode: smsCode,
+    );
+
+    switch (tokenRes) {
+      case Left(value: final l):
+        state = AsyncValue.error(l.message, StackTrace.current);
+      case Right(value: final token):
+        final res = await _authRemoteRepository.authenticateWithFirebase(
+          firebaseToken: token,
+        );
+        switch (res) {
+          case Left(value: final l):
+            state = AsyncValue.error(l.message, StackTrace.current);
+          case Right(value: final user):
+            state = _loginSuccess(user);
+        }
+    }
   }
 
   AsyncValue<UserModel>? _loginSuccess(UserModel user) {
@@ -75,19 +112,19 @@ class AuthViewmodel extends _$AuthViewmodel {
   }
 
   Future<UserModel?> getData() async {
-    //state = const AsyncValue.loading();
     final token = _authLocalRepository.getToken();
-    if (token == null) return null; // nothing to verify, don't touch state
+    if (token == null) return null;
 
     final res = await _authRemoteRepository.getCurrentUserData(token);
-    if (_authLocalRepository.getToken() != token) return null; // logged out meanwhile
+    if (_authLocalRepository.getToken() != token) return null;
 
     return switch (res) {
-      Left() => null, // offline or Echo asleep: keep the cached user
+      Left() => null,
       Right(value: final r) => _getDataSuccess(r).value,
     };
   }
-  AsyncValue<UserModel> _getDataSuccess(UserModel user){
+
+  AsyncValue<UserModel> _getDataSuccess(UserModel user) {
     _authLocalRepository.setUserJson(user.toJson());
     _currentUserNotifier.addUser(user);
     return state = AsyncValue.data(user);
