@@ -69,3 +69,4 @@ linux/flutter/ephemeral/
 
 #firebase related
 lib/firebase_options.dart/
+firebase.json
