@@ -70,5 +70,6 @@ linux/flutter/ephemeral/
 # Firebase (generated per developer by `flutterfire configure`)
 lib/firebase_options.dart
 firebase.json
+lib/core/constants/server_constants.dart
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
