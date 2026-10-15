@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AuthPage extends ConsumerStatefulWidget {
-  const AuthPage({super.key});
+  /// Open on the "Sign up" wording instead of "Sign in".
+  final bool initialSignUp;
+  const AuthPage({super.key, this.initialSignUp = false});
 
   @override
   ConsumerState<AuthPage> createState() => _AuthPageState();
@@ -18,6 +20,11 @@ class AuthPage extends ConsumerStatefulWidget {
 class _AuthPageState extends ConsumerState<AuthPage> {
   final phoneController = TextEditingController();
   final formKey = GlobalKey<FormState>();
+
+  // With Firebase phone/Google auth, sign up and sign in are the same call
+  // (the server creates the user on first login). This flag only changes the
+  // wording so new users see a "Sign up" screen and returning users "Sign in".
+  late bool isSignUp = widget.initialSignUp;
 
   @override
   void dispose() {
@@ -32,6 +39,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     );
 
     ref.listen(authViewmodelProvider, (_, next) {
+      // When the OTP page is open on top of this page, it handles the result.
+      // Without this check both pages react (double snackbar / double navigation).
+      if (ModalRoute.of(context)?.isCurrent != true) return;
       next?.when(
         data: (user) {
           Navigator.pushAndRemoveUntil(
@@ -70,10 +80,12 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Sign in to continue',
+                        Text(
+                          isSignUp
+                              ? 'Create an account to get started'
+                              : 'Sign in to continue',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             color: Pallete.subtitleText,
                           ),
@@ -172,18 +184,20 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                               color: Pallete.whiteColor,
                               borderRadius: BorderRadius.circular(7),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.g_mobiledata,
                                   color: Colors.black,
                                   size: 36,
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Sign in with Google',
-                                  style: TextStyle(
+                                  isSignUp
+                                      ? 'Sign up with Google'
+                                      : 'Sign in with Google',
+                                  style: const TextStyle(
                                     color: Colors.black87,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -192,6 +206,33 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                               ],
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 28),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isSignUp
+                                  ? 'Already have an account?'
+                                  : 'New to Echo?',
+                              style: const TextStyle(
+                                color: Pallete.subtitleText,
+                                fontSize: 14,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  setState(() => isSignUp = !isSignUp),
+                              child: Text(
+                                isSignUp ? 'Sign in' : 'Sign up',
+                                style: const TextStyle(
+                                  color: Pallete.gradient2,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
