@@ -86,10 +86,11 @@ class HomeViewmodel extends _$HomeViewmodel{
       token: ref.read(currentUserNotifierProvider)!.token
     );
     switch (res) {
-      Left(value: final l) =>
-        state = AsyncValue.error(l.message, StackTrace.current),
-      Right(value: final r) => state = _favSongSuccess(r, SongId),
-    };
+      case Left(value: final l):
+        state = AsyncValue.error(l.message, StackTrace.current);
+      case Right(value: final r):
+        state = _favSongSuccess(r, SongId);
+    }
   }
    AsyncValue _favSongSuccess(bool isFavorited, String songId) {
     final userNotifier = ref.read(currentUserNotifierProvider.notifier);

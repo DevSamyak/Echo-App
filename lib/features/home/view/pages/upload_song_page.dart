@@ -82,7 +82,7 @@ class _UploadSongPageState extends ConsumerState<UploadSongPage> {
             onPressed: () async {
               if (formKey.currentState!.validate() &&
                   selectedAudio != null &&
-                // 2. CALL VIEWMODEL INSTEAD OF REPOSITORY
+                  selectedThumbnail != null) {
                 await ref.read(homeViewmodelProvider.notifier).uploadSong(
                       selectedThumbnail: selectedThumbnail!,
                       selectedAudio: selectedAudio!,
