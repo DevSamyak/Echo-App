@@ -68,3 +68,6 @@ linux/flutter/ephemeral/
 *.env
 
 #firebase related
+lib/firebase_options.dart
+firebase.json
+lib/core/server_constant.dart
