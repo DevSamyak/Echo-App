@@ -39,7 +39,7 @@ class AuthRemoteRepository {
 
   Future<Either<AppFailure, UserModel>> getCurrentUserData(String token) async {
     try {
-      print('x-auth-token (sent in header): $token');
+
       final response = await http.get(
         Uri.parse('${ServerConstants.serverUrl}/auth/'),
         headers: {
