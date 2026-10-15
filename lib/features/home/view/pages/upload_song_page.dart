@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:client/core/theme/app_pallete.dart';
 import 'package:client/core/utils.dart';
 import 'package:client/core/widgets/custom_field.dart';
-import 'package:client/core/providers/current_user_notifier.dart';
 import 'package:client/core/widgets/loader.dart';
 import 'package:client/features/home/viewmodel/home_viewmodel.dart';
 import 'package:client/features/home/widgets/audiowave.dart';
@@ -83,13 +82,6 @@ class _UploadSongPageState extends ConsumerState<UploadSongPage> {
             onPressed: () async {
               if (formKey.currentState!.validate() &&
                   selectedAudio != null &&
-                  selectedThumbnail != null) {
-                
-                final hexCode = selectedColor.value
-                    .toRadixString(16)
-                    .substring(2, 8)
-                    .toUpperCase();
-                
                 // 2. CALL VIEWMODEL INSTEAD OF REPOSITORY
                 await ref.read(homeViewmodelProvider.notifier).uploadSong(
                       selectedThumbnail: selectedThumbnail!,

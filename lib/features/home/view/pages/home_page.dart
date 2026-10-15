@@ -28,10 +28,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     LibraryPage(),
   ];
 
-  Color _tint(int index) => selectedIndex == index
-      ? Pallete.whiteColor
-      : Pallete.inactiveBottomBarItemColor;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
